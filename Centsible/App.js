@@ -1,10 +1,21 @@
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, Image } from 'react-native';
+import { Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
-import Button from './components/Button';
 import ImageViewer from './components/ImageViewer';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import {NavigationContainer} from '@react-navigation/native';
+import Icon from 'react-native-vector-icons/FontAwesome'; 
+
+import { globalStyles } from './styles/globalStyles';
+import TransactionScreen from './screens/transaction';
+import GoalsScreen from './screens/goals';
+import ReportScreen from './screens/reports';
+import ProfileScreen from './screens/profile';
+
 
 const PlaceholderImage = require('./assets/background-img.png');
+
+const Tab = createBottomTabNavigator();
 
 export default function App() {
   const [isLoading, setIsLoading] = useState(true);
@@ -19,57 +30,59 @@ export default function App() {
 
   if (isLoading) {
     return (
-      <View style={styles.splashContainer}>
-        <View style={styles.imageContainer}>
+      <View style={globalStyles.splashContainer}>
+        <View style={globalStyles.imageContainer}>
           <ImageViewer placeholderImageSource={PlaceholderImage} />
         </View>
-        <View style={styles.textContainer}>
-          <Text style={styles.welcomeText}>Welcome to Centsible!</Text>
+        <View style={globalStyles.textContainer}>
+          <Text style={globalStyles.welcomeText}>Welcome to Centsible!</Text>
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.container}>
-      <View style={styles.footerContainer}>
-        <Button theme="primary" label="Sign up" />
-        <Button theme="primary" label="Login" />
-      </View>
-      <StatusBar style="auto" />
-    </View>
+    <NavigationContainer>
+          <Tab.Navigator>
+            <Tab.Screen 
+              name="Transactions" 
+              component={TransactionScreen} 
+              options={{
+                  tabBarIcon: ({ color, size }) => (
+                    <Icon name="credit-card" color={color} size={size} />
+                  ),
+                }} 
+              />
+            <Tab.Screen 
+              name="Goals" 
+              component={GoalsScreen} 
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Icon name="dollar" color={color} size={size} />
+                ),
+              }} 
+            />
+            <Tab.Screen 
+              name="Reports" 
+              component={ReportScreen} 
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Icon name="pie-chart" color={color} size={size} />
+                ),
+              }} 
+            />
+            <Tab.Screen 
+              name="Profile" 
+              component={ProfileScreen} 
+              options={{
+                tabBarIcon: ({ color, size }) => (
+                  <Icon name="user" color={color} size={size} />
+                ),
+              }} 
+            />
+          </Tab.Navigator>
+          <StatusBar style="auto" />
+    </NavigationContainer>
+    
   );
 }
-
-const styles = StyleSheet.create({
-  splashContainer: {
-    flex: 1,
-    backgroundColor: 'purple',
-    alignItems: 'center',
-    justifyContent: 'flex-start', // Align items at the start
-  },
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  imageContainer: {
-    flex: 0.8, // Adjust this to control image height
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: 50, 
-  },
-  textContainer: {
-    alignItems: 'center', // Center horizontally
-    marginTop: 20, // Add some margin for spacing
-  },
-  welcomeText: {
-    color: 'white', // Change text color for better visibility
-    fontSize: 55,
-    textAlign: 'center', // Center text alignment
-  },
-  footerContainer: {
-    alignItems: 'center',
-  },
-});
