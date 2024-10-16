@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Text, View, TouchableOpacity, Modal, TextInput, Button, Alert, FlatList } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { globalStyles } from '../styles/globalStyles';
@@ -11,6 +11,16 @@ export default function TransactionScreen() {
   const [type, setType] = useState('expense'); //setting the default to say expense
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [transactions, setTransactions] = useState([]);
+
+  //hard coded transactions
+  useEffect(() => {
+    const initialTransactions = [
+      { amount: 50, category: 'Groceries', type: 'expense', date: new Date(2024, 10, 15) },
+      { amount: 200, category: 'Salary', type: 'income', date: new Date(2024, 10, 10) },
+      { amount: 30, category: 'Utilities', type: 'expense', date: new Date(2024, 10, 12) },
+    ];
+    setTransactions(initialTransactions);
+  }, []);
 
   const handleAddTransaction = () => {
     const parsedAmount = parseFloat(amount);
