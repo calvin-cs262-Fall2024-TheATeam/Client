@@ -5,83 +5,206 @@ import {
 import TransactionModal from '../transactionComponents/transactionModal'; // Import the modal component
 import { SwipeListView } from 'react-native-swipe-list-view';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import React, { memo } from 'react';
 
 export default function TransactionScreen({ navigation }) {
   const [modalVisible, setModalVisible] = useState(false);
   const [amount, setAmount] = useState('');
   const [date, setDate] = useState(new Date());
   const [category, setCategory] = useState('');
-  const [type, setType] = useState('expense'); //setting the default to say expense
+  const [categoryId, setCategoryId] = useState(null);
+  const [type, setType] = useState('Expense'); //setting the default to say expense
   const [description, setDescription] = useState('');
   const [transactions, setTransactions] = useState([]);
   const [expandedTransaction, setExpandedTransaction] = useState(null);
   const [selectedIndex, setSelectedIndex] = useState(0); // set state for expense/income segmented control tab
 
-  //temporary hard-coded transactions
   useEffect(() => {
-    const initialTransactions = [
-    { key: '1', amount: 200, category: 'Housing', description: 'Monthly rent', type: 'expense', date: new Date(2024, 9, 1) },
-    { key: '4', amount: 30, category: 'Transportation', description: 'Gas for the car', type: 'expense', date: new Date(2024, 9, 3) },
-    { key: '5', amount: 50, category: 'Personal', description: 'New clothes', type: 'expense', date: new Date(2024, 9, 2) },
-    { key: '7', amount: 10, category: 'Food', description: 'Takeout dinner', type: 'expense', date: new Date(2024, 9, 3) },
-    { key: '8', amount: 60, category: 'Housing', description: 'Electricity bill', type: 'expense', date: new Date(2024, 9, 5) },
-    { key: '10', amount: 10, category: 'Food', description: 'Lunch with friends', type: 'expense', date: new Date(2024, 9, 6) },
-    { key: '12', amount: 25, category: 'Personal', description: 'Coffee and bagels', type: 'expense', date: new Date(2024, 9, 6) },
-    { key: '13', amount: 90, category: 'Food', description: 'Groceries for the week', type: 'expense', date: new Date(2024, 9, 7) },
-    { key: '14', amount: 20, category: 'Personal', description: 'Shampoo and toiletries', type: 'expense', date: new Date(2024, 9, 7) },
-    { key: '15', amount: 50, category: 'Entertainment', description: 'Weekend trip', type: 'expense', date: new Date(2024, 9, 8) },
-    { key: '16', amount: 10, category: 'Food', description: 'Fast food lunch', type: 'expense', date: new Date(2024, 9, 9) },
-    { key: '18', amount: 45, category: 'Personal', description: 'Haircut', type: 'expense', date: new Date(2024, 9, 5) },
-    { key: '21', amount: 10, category: 'Personal', description: 'Coffee at campus cafe', type: 'expense', date: new Date(2024, 9, 10) },
-    { key: '22', amount: 100, category: 'Personal', description: 'New shoes', type: 'expense', date: new Date(2024, 9, 13) },
-    { key: '23', amount: 100, category: 'Personal', description: 'Amazon', type: 'expense', date: new Date(2024, 9, 13) },
-    { key: '24', amount: 50, category: 'Food', description: 'Groceries for the week', type: 'expense', date: new Date(2024, 9, 14) },
-    { key: '25', amount: 15, category: 'Education', description: 'School supplies', type: 'expense', date: new Date(2024, 9, 14) },
-    { key: '28', amount: 50, category: 'Personal', description: 'Earrings', type: 'expense', date: new Date(2024, 9, 16) },
-    { key: '30', amount: 10, category: 'Entertainment', description: 'Sports event tickets', type: 'expense', date: new Date(2024, 9, 16) },
-    { key: '32', amount: 5, category: 'Food', description: 'Coffee shop', type: 'expense', date: new Date(2024, 9, 18) },
-    { key: '34', amount: 15, category: 'Food', description: 'Lunch with friends', type: 'expense', date: new Date(2024, 9, 19) },
-    { key: '36', amount: 50, category: 'Transportation', description: 'Gas for the car', type: 'expense', date: new Date(2024, 9, 20) },
-    { key: '38', amount: 10, category: 'Entertainment', description: 'Movie night with friends', type: 'expense', date: new Date(2024, 9, 22) },
-    { key: '47', amount: 25, category: 'Personal', description: 'Toiletries', type: 'expense', date: new Date(2024, 9, 28) },
-    { key: '48', amount: 50, category: 'Food', description: 'Groceries for the weekend', type: 'expense', date: new Date(2024, 9, 28) },
-    { key: '50', amount: 15, category: 'Entertainment', description: 'Monthly gaming subscription', type: 'expense', date: new Date(2024, 9, 30) },
-    { key: '51', amount: 180, category: 'Income', description: 'Weekly income', type: 'income', date: new Date(2024, 9, 8) },
-    { key: '52', amount: 180, category: 'Income', description: 'Weekly income', type: 'income', date: new Date(2024, 9, 15) },
-    { key: '53', amount: 180, category: 'Income', description: 'Weekly income', type: 'income', date: new Date(2024, 9, 22) },
-    { key: '54', amount: 180, category: 'Income', description: 'Weekly income', type: 'income', date: new Date(2024, 9, 29) },
-    
-    ];
+    const fetchTransactions = async () => {
+      try {
+        // Step 1: Fetch transactions
+        const response = await fetch('https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/transactions/1'); // Use the correct API endpoint
+        if (response.ok) {
+          const data = await response.json();
+          ('Fetched transactions:', data);  // Add this log to check the fetched data
 
-    const sortedTransactions = initialTransactions.sort((a, b) => b.date - a.date);
-    setTransactions(sortedTransactions);
-  }, []);
 
-  const handleAddTransaction = () => {
-    const parsedAmount = parseFloat(amount);
+          // Step 2: For each transaction, fetch the category name or set to 'Income' for income transactions
+          const updatedTransactions = await Promise.all(data.map(async (transaction, index) => {
+            try {
+              // Check if it's an income or expense
+              if (transaction.transactiontype === 'Income') {
+                // For income, just set category to 'Income'
+                return {
+                  ...transaction,
+                  category: 'Income',  // Set category name as "Income"
+                  key: transaction.id,
+                };
+              } else if (transaction.transactiontype === 'Expense') {
+                // For expense, fetch category name based on category ID
+                const categoryResponse = await fetch(`https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/budgetCategoryName/${transaction.budgetcategoryid}`);
+                if (categoryResponse.ok) {
+                  const categoryData = await categoryResponse.json();
+                  return {
+                    ...transaction,
+                    category: categoryData.categoryname,
+                    key: transaction.id  // Set fetched category name
+                  };
+                } else {
+                  console.error(`Failed to fetch category for ID ${transaction.budgetcategoryid}`);
+                  return {
+                    ...transaction,
+                    category: 'Unknown Category',  // Default category if failed
+                    key: transaction.id || index.toString(),
+                  };
+                }
+              } else {
+                // If neither 'income' nor 'expense', return the transaction with 'Unknown Category'
+                return {
+                  ...transaction,
+                  category: 'Unknown Category',
+                  key: transaction.id || index.toString(),
+                };
+              }
+            } catch (err) {
+              console.error(`Error processing transaction for ID ${transaction.id}: `, err);
+              return {
+                ...transaction,
+                category: 'Unknown Category',  // Default category if error
+                key: transaction.id || index.toString(),
+              };
+            }
+          }));
 
-    // Create a new transaction object
-    const newTransaction = {
-      key: Date.now().toString(), // To generate unique key
-      amount: parsedAmount,
-      category,
-      description,
-      type,
-      date,
+          // Step 3: Sort transactions by date
+          const sortedTransactions = updatedTransactions.sort((a, b) => new Date(b.transactiondate) - new Date(a.transactiondate));
+          setTransactions(sortedTransactions);
+        } else {
+          Alert.alert("Error", "Failed to fetch transactions.");
+        }
+      } catch (error) {
+        console.error('Error fetching transactions:', error);
+        Alert.alert("Error", "Something went wrong.");
+      }
     };
 
-    setTransactions(prevTransactions => {
-      const updatedTransactions = [newTransaction, ...prevTransactions];
-      return updatedTransactions.sort((a, b) => b.date - a.date);  // Sort by date descending
-    });
-    resetForm();
+    fetchTransactions();
+  }, []);
+
+
+  const handleAddTransaction = async () => {
+    const parsedAmount = parseFloat(amount);
+
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      alert("Please enter a valid amount.");
+      return; // Don't proceed if the amount is invalid
+    }
+
+    const transactionDate = new Date(date);  // This is the local time from your state
+    //console.log(transactionDate);
+    const transactionDateISOString = transactionDate.toISOString();  // Convert to UTC ISO string
+    //console.log(transactionDateISOString);
+
+    const newTransaction = {
+      appuserID: 1,  // Assuming this is hardcoded for now, adjust if needed
+      dollaramount: parsedAmount.toFixed(2),  // Format the amount to two decimal places
+      transactiontype: type,  // Assuming type is a variable holding transaction type (income, expense, etc.)
+      budgetcategoryID: categoryId,  // Use the selected category ID
+      optionaldescription: description,  // Optional description for the transaction
+      transactiondate: transactionDateISOString
+    };
+
+    console.log("New Transaction (final):", newTransaction);
+
+    //console.log(date);
+    //console.log("New Transaction:", newTransaction);  // Log the new transaction to verify
+
+    try {
+      // Sending the transaction data to the server
+      const response = await fetch('https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/transactions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newTransaction),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Created Transaction with ID:', data.id);
+
+        // Fetch the category name using the categoryId of the transaction
+        let categoryName = 'Unknown Category';  // Default category name if fetch fails
+        if (categoryId) {
+          try {
+            const categoryResponse = await fetch(`https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/budgetCategoryName/${categoryId}`);
+            if (categoryResponse.ok) {
+              const categoryData = await categoryResponse.json();
+              categoryName = categoryData.categoryname; // Use fetched category name
+            } else {
+              console.error(`Failed to fetch category for ID ${categoryId}`);
+            }
+          } catch (err) {
+            console.error('Error fetching category name:', err);
+          }
+        }
+
+        // Add the categoryName to the transaction data
+        data.category = categoryName;
+        const transactionWithId = {
+          ...data,               // The returned data from backend (including id)
+          key: data.id.toString(),  // Use the backend-generated id as the key for React (if needed)
+        };
+  
+        // Update the transactions list with the new transaction
+        //console.log(data);
+        setTransactions(prevTransactions => {
+          const updatedTransactions = [transactionWithId, ...prevTransactions]; // Add the new transaction at the beginning
+          return updatedTransactions.sort((a, b) => new Date(b.transactiondate) - new Date(a.transactiondate));  // Sort by date descending
+        });
+
+        // Reset the form fields after successful transaction creation
+        resetForm();
+      } else {
+        const responseText = await response.text();
+        console.error('Error response:', responseText);  // Log the error response for debugging
+        throw new Error('Failed to add transaction: ' + responseText);
+      }
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+      alert("Error creating transaction: " + error.message);
+    }
   };
+
+  const updateCurrentBalanceInDB = async (newBalance) => {
+    try {
+      const response = await fetch('https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/currentBalance', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: 1, // Assuming the user ID is hardcoded, replace this with dynamic user ID if needed
+          newbalance: newBalance,
+        }),
+      });
+      //console.log(newBalance);
+
+      if (response.ok) {
+        console.log('Balance updated successfully!');
+      } else {
+        const responseText = await response.text();
+        console.error('Error updating balance:', responseText);
+      }
+    } catch (error) {
+      console.error('Error updating balance in the database:', error);
+    }
+  };
+
 
   // Resets the form fields and closes the modal
   const resetForm = () => {
     setAmount('');
     setCategory('');
-    setType('expense');
+    setType('Expense');
     setDate(new Date());
     setDescription('');
     setSelectedIndex(0); //Resets to "Expense" (index 0)
@@ -91,32 +214,55 @@ export default function TransactionScreen({ navigation }) {
   // handles switching expense/income tabs in transaction
   const handleIndexChange = (index) => {
     setSelectedIndex(index);
-    if (index === 0) { setType('expense') };
-    if (index === 1) { setType('income') };
+    if (index === 0) { setType('Expense') };
+    if (index === 1) { setType('Income') };
   };
 
   const handleExpandTransaction = (transactionKey) => {
-    if (expandedTransaction === transactionKey) {
-      setExpandedTransaction(null);  // Collapse the transaction if it's already expanded
-    } else {
-      setExpandedTransaction(transactionKey);  // Expand the clicked transaction
-    }
+    // If the same transaction is clicked, collapse it, otherwise expand it
+    setExpandedTransaction(prevKey => prevKey === transactionKey ? null : transactionKey);
   };
+
+  // Update the balance when the transactions state changes
+  useEffect(() => {
+    const newBalance = calculateBalance();
+    //console.log(newBalance);
+    updateCurrentBalanceInDB(newBalance); // Update balance in DB whenever transactions change
+  }, [transactions]); // This hook will run whenever the transactions state is updated
 
   // Calculate current balance
   const calculateBalance = () => {
-    return transactions.reduce((balance, transaction) => {
-      return transaction.type === 'income'
-        ? balance + transaction.amount
-        : balance - transaction.amount;
-    }, 0).toFixed(2); // Keep it two decimals
+    let balance = 0;
+
+    // Calculate balance based on transactions
+    transactions.forEach(transaction => {
+      const amount = parseFloat(transaction.dollaramount);
+      if (transaction.transactiontype === 'Income') {
+        balance += amount;
+      } else if (transaction.transactiontype === 'Expense') {
+        balance -= amount;
+      }
+    });
+
+    return balance.toFixed(2); // Return balance rounded to two decimal places
   };
 
   // Renders a single transaction item with correct layout 
-  const TransactionItem = ({ data }) => {
-    const options = { month: 'short', day: 'numeric', year: 'numeric' };
-    const formattedDate = data.item.date.toLocaleDateString('en-US', options).replace(',', '');
+  const TransactionItem = memo(({ data }) => {
+    const options = {
+      month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric',
+      minute: 'numeric',
+      second: 'numeric'
+    };
+    const formattedDate = new Date(data.item.transactiondate).toLocaleDateString('en-US', options).replace(',', '');
+    //console.log("Formatted Date:", formattedDate);
     const isExpanded = expandedTransaction === data.item.key;
+    //console.log("TransactionKey:", data.item.key, "ExpandedKey:", expandedTransaction, "IsExpanded:", isExpanded);
+
+    const formattedAmount = parseFloat(data.item.dollaramount).toFixed(2);
+    const amountText = data.item.transactiontype === 'Income'
+      ? `+$${formattedAmount}`
+      : `-$${formattedAmount}`;
 
     return (
       <TouchableHighlight
@@ -127,7 +273,7 @@ export default function TransactionScreen({ navigation }) {
         <View style={styles.itemContainer}>
           <View>
             <Text style={styles.dateText}>{formattedDate.toUpperCase()}</Text>
-            {data.item.type === 'income' ? (
+            {data.item.transactiontype === 'Income' ? (
               <Text style={[styles.categoryText, isExpanded && { paddingBottom: 0 }]}>Income</Text>
             ) : (
               <Text style={[styles.categoryText, isExpanded && { paddingBottom: 0 }]}>{data.item.category}</Text>
@@ -135,20 +281,22 @@ export default function TransactionScreen({ navigation }) {
             {/* Render description if expanded */}
             {isExpanded && (
               <Text style={[styles.descriptionText, { paddingBottom: 8 }]}>
-                {data.item.description || "No description given"}
+                {data.item.optionaldescription || "No description given"}
               </Text>
             )}
           </View>
-          <Text style={[styles.amountText, { color: data.item.type === 'income' ? 'green' : 'black' }]}>
-            {data.item.type === 'income' ? `+$${data.item.amount.toFixed(2)}` : `-$${data.item.amount.toFixed(2)}`}
+          <Text style={[styles.amountText, { color: data.item.transactiontype === 'Income' ? 'green' : 'black' }]}>
+            {amountText}
           </Text>
         </View>
       </TouchableHighlight>
     );
-  };
+  });
 
   // Render function for individual transaction items
   const renderItem = (data) => {
+    //console.log("Transactions:", transactions); // Verify if the state contains the new transaction
+    //console.log(data.item.dollaramount);
     return (
       <TransactionItem data={data} />
     );
@@ -160,12 +308,40 @@ export default function TransactionScreen({ navigation }) {
     }
   };
 
-  const deleteTransaction = (rowMap, rowKey) => {
+  const deleteTransaction = async (rowMap, rowKey) => {
     closeRow(rowMap, rowKey); // Close the row before deletion
-    const newData = [...transactions]; // Copy current transactions
-    const prevIndex = transactions.findIndex(item => item.key === rowKey); // Find the index of the transaction to delete
-    newData.splice(prevIndex, 1); // Remove the transaction from the list
-    setTransactions(newData); // Update state with the new list
+
+    // Find the transaction to delete in the local state
+    const transactionToDelete = transactions.find(item => item.key === rowKey);
+    if (!transactionToDelete) {
+      alert("Transaction not found!");
+      return;
+    }
+
+    try {
+      // Make DELETE request to the backend
+      const response = await fetch(`https://centsible-gahyafbxhwd7atgy.eastus2-01.azurewebsites.net/transactions/${transactionToDelete.id}`, {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      // Parse the response
+      const responseData = await response.json();
+
+      if (response.ok) {
+        // If deletion was successful, remove the transaction from the local state
+        const newTransactions = transactions.filter(item => item.key !== rowKey);
+        setTransactions(newTransactions);
+      } else {
+        // Handle server error
+        Alert.alert("Error", responseData.message || "Failed to delete transaction.");
+      }
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      Alert.alert("Error", "Something went wrong while deleting the transaction.");
+    }
   };
 
   const HiddenItemWithActions = ({ swipeAnimatedValue, onDelete, data }) => {
@@ -236,6 +412,8 @@ export default function TransactionScreen({ navigation }) {
         setAmount={setAmount}
         category={category}
         setCategory={setCategory}
+        setCategoryId={setCategoryId}  // Pass setCategoryId here
+        categoryId={categoryId}        // Pass the current categoryId
         description={description}
         setDescription={setDescription}
         type={type}
